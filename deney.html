@@ -876,11 +876,11 @@ submitOpenQuestion=function(){
  if((ST.mcheck.open||'').trim())return previewOriginal.submitOpenQuestion();
  previewSkipped(_curScreen);showDebrief();
 };
-// Wake the partner-opening delay without cancelling the next screen's work.
+// Wake demo preparation delays without cancelling the next screen's work.
 let wakeRevisionWait;
 const revisionVisibleWait=R.visibleWait;
 R.visibleWait=async function(ms,options){
- if(phaseState?.name!=='partner_open')return revisionVisibleWait(ms,options);
+ if(!['partner_open','feedback'].includes(phaseState?.name))return revisionVisibleWait(ms,options);
  const controller=new AbortController();let skipped=false;
  const cancel=()=>controller.abort();const wake=()=>{skipped=true;cancel();};
  wakeRevisionWait=wake;options.signal?.addEventListener('abort',cancel,{once:true});
@@ -892,6 +892,9 @@ R.visibleWait=async function(ms,options){
 function skipRevisionWait(){
  if(_curScreen==='matchScreen')return skipMatching();
  if(_curScreen==='partnerWaitScreen'&&phaseState?.name==='partner_open')return wakeRevisionWait?.();
+ if(_curScreen==='feedbackScreen'&&!document.getElementById('feedbackResultCard')){
+  skipFeedback();wakeRevisionWait?.();return;
+ }
  if(_curScreen==='partnerScreen'){
   ST.sloganFontMul=SLO_SIZES[SIZE_FINAL_IDX]/48;ST.sloganColor=SLO_COLORS[COLOR_FINAL_IDX];ST.sloganFont=FONT_OPTS[1].css;
   ST._showPreview=true;updateMiniPreview();skipPartner();
@@ -902,7 +905,7 @@ function refreshRevisionControls(){
   const button=document.getElementById(id);if(button?.disabled)button.disabled=false;
  }
  const skip=document.getElementById('previewSkipWait');
- const visible=_curScreen==='matchScreen'||_curScreen==='partnerScreen'||(_curScreen==='partnerWaitScreen'&&document.getElementById('prePartnerPopup').classList.contains('show'));
+ const visible=_curScreen==='matchScreen'||_curScreen==='partnerScreen'||(_curScreen==='partnerWaitScreen'&&document.getElementById('prePartnerPopup').classList.contains('show'))||(_curScreen==='feedbackScreen'&&!document.getElementById('feedbackResultCard'));
  if(skip.hidden===visible)skip.hidden=!visible;
 }
 new MutationObserver(refreshRevisionControls).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['disabled','class']});
